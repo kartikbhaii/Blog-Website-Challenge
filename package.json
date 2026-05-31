@@ -2,16 +2,26 @@
   "name": "ejs-challenge",
   "version": "1.0.0",
   "description": "",
+  "homepage": "https://github.com/kartikbhaii/Blog-Website-Challenge#readme",
+  "bugs": {
+    "url": "https://github.com/kartikbhaii/Blog-Website-Challenge/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kartikbhaii/Blog-Website-Challenge.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.5",
     "ejs": "^2.7.4",
     "express": "^4.22.2",
-    "lodash": "^4.18.1"
+    "lodash": "^4.18.1",
+    "mongoose": "^9.6.3"
   }
 }
