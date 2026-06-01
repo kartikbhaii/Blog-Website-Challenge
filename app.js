@@ -1,3 +1,4 @@
+require("dotenv").config();
 const dns = require("dns");
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
@@ -7,7 +8,7 @@ const ejs = require("ejs");
 const _ = require("lodash");
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb+srv://kk:kkhannu0@cluster0.piqnmt9.mongodb.net/blogDB?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect(process.env.MONGODB_URL)
   .then(() => {
     console.log("Connected to MongoDB successfully.");
   })
@@ -120,6 +121,7 @@ app.get("/posts/:postName", (req,res)=>{
 
 
 
-app.listen(3000, function () {
-  console.log("Server started on port 3000");
+const port = process.env.PORT || 3000;
+app.listen(port, function () {
+  console.log(`Server started on port ${port}`);
 });
