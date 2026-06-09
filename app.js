@@ -1,6 +1,10 @@
 require("dotenv").config();
-const dns = require("dns");
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
+const dns = require("dns")
+try {
+    dns.setServers(["8.8.8.8", "8.8.4.4"]);
+} catch (error) {
+    console.warn("⚠️ DNS configuration warning: could not set custom DNS servers.", error.message);
+}
 
 const express = require("express");
 const bodyParser = require("body-parser");
