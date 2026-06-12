@@ -6,19 +6,24 @@ try {
     console.warn("⚠️ DNS configuration warning: could not set custom DNS servers.", error.message);
 }
 
+const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const _ = require("lodash");
 const mongoose = require("mongoose");
 
-mongoose.connect(process.env.MONGODB_URL)
-  .then(() => {
-    console.log("Connected to MongoDB successfully.");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-  });
+if (!process.env.MONGODB_URL) {
+  console.error("❌ Error: MONGODB_URL environment variable is not defined!");
+} else {
+  mongoose.connect(process.env.MONGODB_URL)
+    .then(() => {
+      console.log("Connected to MongoDB successfully.");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err);
+    });
+}
 
 const postSchema = new mongoose.Schema({
   title: String,
@@ -30,6 +35,7 @@ const Post = mongoose.model("Post", postSchema)
 
 const app = express();
 
+app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -44,7 +50,8 @@ app.get("/", (req, res) => {
     });
   })
   .catch((err) => {
-    console.log(err);
+    console.error("Error fetching posts:", err);
+    res.status(500).send("Internal Server Error: Could not fetch posts.");
   });
 });
 
@@ -60,22 +67,45 @@ app.get("/compose", (req, res) => {
   res.render("compose");
 });
 
-app.get("/posts/:postId", (req, res)=>{
-const requestedPostId = req.params.postId;
-Post.findOne({ _id: requestedPostId })
-  .then((post) => {
-    res.render("post", {
-      title: post.title,
-      content: post.content
-    });
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+app.get("/posts/:postId", (req, res) => {
+  const requestedPostId = req.params.postId;
 
-
-
-})
+  if (mongoose.Types.ObjectId.isValid(requestedPostId)) {
+    Post.findOne({ _id: requestedPostId })
+      .then((post) => {
+        if (!post) {
+          return res.status(404).send("Post not found.");
+        }
+        res.render("post", {
+          title: post.title,
+          content: post.content
+        });
+      })
+      .catch((err) => {
+        console.error("Error finding post by ID:", err);
+        res.status(500).send("Internal Server Error");
+      });
+  } else {
+    // Fallback: search by title matching
+    const requestedTitle = _.lowerCase(requestedPostId);
+    Post.find({})
+      .then((posts) => {
+        const foundPost = posts.find(post => _.lowerCase(post.title) === requestedTitle);
+        if (foundPost) {
+          res.render("post", {
+            title: foundPost.title,
+            content: foundPost.content
+          });
+        } else {
+          res.status(404).send("Post not found.");
+        }
+      })
+      .catch((err) => {
+        console.error("Error finding post by title:", err);
+        res.status(500).send("Internal Server Error");
+      });
+  }
+});
 
 app.post("/compose", (req, res) => {
   const post = new Post({
@@ -87,24 +117,13 @@ app.post("/compose", (req, res) => {
     res.redirect("/");
   })
   .catch((err) => {
-    console.log(err);
-    res.redirect("/");
+    console.error("Error saving post:", err);
+    res.status(500).send("Internal Server Error: Could not save post.");
   });
 });
 
 
-app.get("/posts/:postName", (req,res)=>{
-  const requestedTitle = _.lowerCase(req.params.postName)
-  posts.forEach(post => {
-    const storedTitle = _.lowerCase(post.title)
-    if (requestedTitle === storedTitle) {
-      res.render("post", {
-        title: post.title,
-        content: post.content
-      })
-    }
-  });
-})
+// Note: Handled by consolidated /posts/:postId route above.
 
 
 
@@ -115,6 +134,10 @@ app.get("/posts/:postName", (req,res)=>{
 
 
 const port = process.env.PORT || 3000;
-app.listen(port, function () {
-  console.log(`Server started on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, function () {
+    console.log(`Server started on port ${port}`);
+  });
+}
+
+module.exports = app;
